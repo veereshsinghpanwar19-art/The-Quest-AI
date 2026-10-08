@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MindQuest: The AI Game Master</title>
+<meta name="description" content="Type any topic or upload your notes. Gemini builds an adaptive boss-battle quest around it.">
+<style>
+:root{--bg:#070b14;--s:rgba(18,26,47,.8);--s2:rgba(30,42,76,.85);--bd:rgba(255,255,255,.1);--cy:#00f0ff;--pu:#b026ff;--em:#10b981;--am:#f59e0b;--cr:#ff3366;--tx:#f8fafc;--mu:#a3b1c6;--r:14px}
+[data-contrast=high]{--bg:#000;--s:#111;--s2:#1c1c1c;--bd:#fff;--mu:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+body:before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(circle at 50% 0,rgba(176,38,255,.16),transparent 55%),radial-gradient(circle at 85% 85%,rgba(0,240,255,.1),transparent 45%)}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:100}
+:focus-visible{outline:3px solid var(--cy);outline-offset:2px}
+.skip{position:absolute;left:8px;top:-50px;background:var(--cy);color:#000;padding:8px 14px;font-weight:700;z-index:300}.skip:focus{top:8px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:.8rem 1.5rem;border-bottom:1px solid var(--bd);background:rgba(7,11,20,.85);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
+.logo{font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:.6rem}
+.badge{background:linear-gradient(135deg,var(--cy),var(--pu));color:#000;font-size:.7rem;font-weight:800;padding:2px 8px;border-radius:8px}
+.nav{display:flex;gap:.5rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.6rem 1.1rem;border-radius:var(--r);border:1px solid var(--bd);background:var(--s);color:var(--tx);font:600 .9rem inherit;font-family:inherit;cursor:pointer;transition:.2s}
+.btn:hover:not(:disabled){transform:translateY(-2px);border-color:var(--cy)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.p{background:linear-gradient(135deg,var(--cy),#0099ff);color:#041018;border:0;font-weight:700}
+.btn.sm{padding:.35rem .7rem;font-size:.78rem}
+main{flex:1;width:100%;max-width:1000px;margin:0 auto;padding:1.5rem}
+section{display:none;flex-direction:column;gap:1.25rem}section.on{display:flex}
+.card{background:var(--s);border:1px solid var(--bd);border-radius:20px;padding:1.75rem;backdrop-filter:blur(14px);box-shadow:0 20px 40px -18px #000}
+h1.hero{font-size:clamp(2rem,5vw,3.2rem);line-height:1.1;font-weight:900;text-align:center;margin:1rem 0 .5rem}
+.sub{text-align:center;color:var(--mu);max-width:640px;margin:0 auto 1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:700px){.grid2,.opts{grid-template-columns:1fr!important}.hud{grid-template-columns:1fr!important}}
+label{display:block;font-size:.82rem;font-weight:700;color:var(--mu);margin-bottom:.45rem}
+.in{width:100%;background:rgba(0,0,0,.4);border:1px solid var(--bd);border-radius:var(--r);padding:.85rem 1rem;color:var(--tx);font:inherit}
+.in:focus{border-color:var(--cy);outline:none;box-shadow:0 0 14px rgba(0,240,255,.25)}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+.chip{background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:99px;padding:.3rem .8rem;font-size:.8rem;color:var(--mu);cursor:pointer;font-family:inherit}
+.chip:hover{border-color:var(--cy);color:var(--cy)}
+.drop{border:2px dashed var(--bd);border-radius:var(--r);padding:1.4rem;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.3rem}
+.drop:hover,.drop.dv{border-color:var(--pu);background:rgba(176,38,255,.07)}
+.drop img{max-height:110px;max-width:100%;border-radius:8px;display:none;margin-top:.4rem}
+.row{display:flex;gap:1rem;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:1.5rem}
+.hud{display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;align-items:center;background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:1rem 1.4rem}
+.meta{display:flex;justify-content:space-between;font-size:.85rem;font-weight:700;margin-bottom:.3rem;gap:.5rem}
+.track{height:12px;background:rgba(0,0,0,.6);border-radius:99px;overflow:hidden}
+.fill{height:100%;border-radius:99px;transition:width .45s cubic-bezier(.16,1,.3,1)}
+.f1{background:linear-gradient(90deg,var(--em),var(--cy))}.f2{background:linear-gradient(90deg,var(--cr),#ff7700)}
+.combo{text-align:center;min-width:100px}.combo b{display:block;font-size:1.4rem;color:var(--am);line-height:1}.combo small{font-size:.68rem;color:var(--mu)}
+.stage{display:flex;justify-content:space-around;align-items:center;padding:1.5rem 1rem;border:1px solid var(--bd);border-radius:20px;background:radial-gradient(circle,rgba(255,51,102,.09),transparent 70%)}
+.av{display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;max-width:40%}
+.ic{width:84px;height:84px;border-radius:50%;background:var(--s);border:2px solid var(--cy);display:flex;align-items:center;justify-content:center;font-size:2.6rem}
+.ic.b{border-color:var(--cr)}
+.gm{background:rgba(0,0,0,.45);border-left:4px solid var(--pu);padding:1rem 1.3rem;border-radius:0 var(--r) var(--r) 0;color:#d5deea;font-style:italic}
+.gm b{display:block;font-style:normal;font-size:.78rem;color:var(--pu);margin-bottom:.2rem}
+.q{font-size:1.3rem;font-weight:700;line-height:1.4;margin-bottom:1rem}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.opt{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:1rem 1.1rem;color:var(--tx);font:inherit;text-align:left;cursor:pointer;display:flex;gap:.9rem;align-items:center;transition:.2s}
+.opt:hover:not(:disabled){border-color:var(--cy);background:rgba(0,240,255,.08);transform:translateX(4px)}
+.opt i{font-style:normal;background:rgba(255,255,255,.1);border-radius:6px;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800}
+.opt.ok{border-color:var(--em)!important;background:rgba(16,185,129,.22)!important}
+.opt.no{border-color:var(--cr)!important;background:rgba(255,51,102,.22)!important}
+.acts{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--bd);color:var(--mu);font-size:.8rem}
+#hintbox,#exp{display:none;margin-top:1rem;border-radius:var(--r);padding:1rem 1.2rem}
+#hintbox{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4)}
+#exp{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.35)}
+.shake{animation:sh .4s both}@keyframes sh{20%,80%{transform:translateX(5px)}40%,60%{transform:translateX(-8px)}}
+.load{align-items:center;text-align:center;padding:4rem 1rem;gap:1.2rem}
+.spin{width:52px;height:52px;border:4px solid rgba(0,240,255,.15);border-top-color:var(--cy);border-radius:50%;animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.tile{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:1.1rem;text-align:center}.tile b{display:block;font-size:2rem;color:var(--cy)}.tile span{font-size:.78rem;color:var(--mu)}
+.step{background:rgba(0,0,0,.3);border-left:3px solid var(--cy);padding:.9rem 1rem;border-radius:0 8px 8px 0;margin-top:.7rem}
+table{width:100%;border-collapse:collapse;margin-top:.8rem}th,td{padding:.6rem .8rem;text-align:left;border-bottom:1px solid var(--bd);font-size:.9rem}th{color:var(--mu);font-size:.75rem}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:200;padding:1rem}.modal.on{display:flex}
+.mw{background:var(--s2);border:1px solid var(--cy);border-radius:20px;max-width:500px;width:100%;padding:1.75rem;display:flex;flex-direction:column;gap:1rem}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1c2848;border:1px solid var(--cy);padding:.7rem 1.2rem;border-radius:12px;z-index:400;display:none;max-width:90%}
+.err{border-color:var(--cr)}
+.ok-t{color:var(--em)}.no-t{color:var(--cr)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<canvas id="fx" aria-hidden="true"></canvas>
+<header>
+  <div class="logo">⚔️ MindQuest <span class="badge" id="mbadge">GEMINI</span></div>
+  <div class="nav">
+    <button class="btn sm" id="bContrast" aria-pressed="false">High contrast</button>
+    <button class="btn sm" id="bSfx" aria-pressed="true">Sound: on</button>
+    <button class="btn sm" id="bKey">API settings</button>
+  </div>
+</header>
+<main id="main">
+<section id="vSetup" class="on">
+  <h1 class="hero">Master any topic by fighting its bosses</h1>
+  <p class="sub">Type a topic or upload your notes. Gemini writes a fresh 5-level quest and adapts every question to how you are playing.</p>
+  <form class="card" id="form">
+    <div class="grid2">
+      <div>
+        <label for="topic">Topic to master</label>
+        <input class="in" id="topic" maxlength="200" placeholder="Anything: Kubernetes, Mughal empire, organic acids, GST law…" autocomplete="off">
+        <div class="chips" aria-label="Topic ideas">
+          <button type="button" class="chip" data-t="Quantum computing basics">⚛️ Quantum computing</button>
+          <button type="button" class="chip" data-t="Indian Constitution">🏛️ Indian Constitution</button>
+          <button type="button" class="chip" data-t="Python decorators">🐍 Python decorators</button>
+          <button type="button" class="chip" data-t="Human immune system">🧬 Immune system</button>
+        </div>
+      </div>
+      <div>
+        <label for="file">Or upload notes (photo of a page, diagram)</label>
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="Upload notes image">
+          <div style="font-size:2rem">📸</div><div>Drop an image or click to upload</div>
+          <img id="prev" alt="Notes preview">
+        </div>
+        <input type="file" id="file" accept="image/*" hidden>
+      </div>
+    </div>
+    <div class="row">
+      <label style="margin:0;display:flex;gap:.5rem;align-items:center;cursor:pointer"><input type="checkbox" id="demo"> Play the built-in sample quest (no API needed)</label>
+      <button class="btn p" id="go" type="submit" style="padding:.8rem 2rem;font-size:1rem">Generate my quest</button>
+    </div>
+  </form>
+</section>
+
+<section id="vLoad" class="load" aria-live="polite">
+  <div class="spin"></div>
+  <div><h2 id="lmsg">Summoning the Game Master…</h2><p class="sub" id="lsub"></p></div>
+  <div id="lerr" style="display:none;gap:.6rem;flex-wrap:wrap;justify-content:center">
+    <button class="btn p" id="bRetry">Try again</button>
+    <button class="btn" id="bBack">Change topic</button>
+  </div>
+</section>
+
+<section id="vGame" aria-live="polite">
+  <div class="hud">
+    <div><div class="meta"><span>Hero scholar</span><span class="ok-t" id="hpT">HP 100/100</span></div>
+      <div class="track" role="progressbar" aria-label="Player HP" aria-valuemin="0" aria-valuemax="100" id="hpP"><div class="fill f1" id="hpB" style="width:100%"></div></div></div>
+    <div class="combo"><b id="cmb">0x</b><small>combo</small></div>
+    <div><div class="meta"><span class="no-t" id="bName">Boss</span><span class="no-t" id="bT">Alive</span></div>
+      <div class="track" role="progressbar" aria-label="Boss HP" aria-valuemin="0" aria-valuemax="100" id="bossP"><div class="fill f2" id="bossB" style="width:100%"></div></div></div>
+  </div>
+  <div class="stage" id="arena">
+    <div class="av"><div class="ic">🧙‍♂️</div><b>Level <span id="lvl">1</span> of 5</b></div>
+    <div style="font-size:1.6rem;font-weight:900;color:var(--mu)" aria-hidden="true">VS</div>
+    <div class="av"><div class="ic b" id="bEmoji">👹</div><b id="bName2">Boss</b></div>
+  </div>
+  <div class="gm"><b>Game Master</b><div id="gmT"></div></div>
+  <div class="card">
+    <div id="diff" style="font-size:.78rem;color:var(--mu);margin-bottom:.5rem"></div>
+    <div class="q" id="qT"></div>
+    <div class="opts" id="opts" role="group" aria-label="Answer choices"></div>
+    <div id="hintbox"></div>
+    <div class="acts"><button class="btn sm" id="bHint">💡 Hint (<span id="hl">2</span> left)</button><span>Press 1–4 to answer, Enter for next</span></div>
+    <div id="exp">
+      <b id="expH"></b><p id="expB" style="margin-top:.3rem"></p>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem;align-items:center"><span style="font-size:.78rem;color:var(--mu)">Explain it again:</span>
+        <button class="btn sm" data-s="like I'm 10 years old">Simple</button>
+        <button class="btn sm" data-s="in a funny, witty style with a good analogy">Funny</button>
+        <button class="btn sm" data-s="like a domain expert, precise and technical">Expert</button></div>
+    </div>
+    <div style="text-align:right;margin-top:1rem"><button class="btn p" id="bNext" style="display:none"></button></div>
+  </div>
+</section>
+
+<section id="vRep">
+  <div class="card" style="text-align:center"><h1 id="rH" style="font-size:2.3rem"></h1><p class="sub" id="rS"></p></div>
+  <div class="tiles"><div class="tile"><b id="rSc">0</b><span>Score</span></div><div class="tile"><b id="rAc">0%</b><span>Accuracy</span></div><div class="tile"><b id="rMx">0x</b><span>Best combo</span></div></div>
+  <div class="card"><h2>Skill report and study plan</h2><div id="plan"></div></div>
+  <div class="card"><h2>Hall of fame</h2>
+    <table><thead><tr><th>Quest</th><th>Result</th><th>Score</th><th>Date</th></tr></thead><tbody id="lb"></tbody></table>
+    <div class="row"><button class="btn p" id="bAgain">Start a new quest</button></div></div>
+</section>
+</main>
+
+<div class="modal" id="mKey" role="dialog" aria-modal="true" aria-labelledby="mt">
+  <div class="mw">
+    <h2 id="mt">Connect to Gemini</h2>
+    <p id="mmsg" style="color:var(--mu);font-size:.88rem">Your key stays in this browser's localStorage and is only sent to Google's Gemini API.</p>
+    <div><label for="key">Gemini API key</label><input class="in" type="password" id="key" placeholder="AIza…" autocomplete="off"></div>
+    <div><label for="model">Model ID (optional, tried first)</label><input class="in" id="model" placeholder="e.g. gemini-3-pro-preview"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap">
+      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--cy);font-size:.82rem">Get a free key in AI Studio</a>
+      <span style="display:flex;gap:.5rem"><button class="btn sm" id="kCancel">Cancel</button><button class="btn p sm" id="kSave">Save key</button></span>
+    </div>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const N=5, HP0=100, DMG=25;
+// Gemini 3 first; falls through automatically if an ID is unavailable for your key.
+const MODELS=['gemini-3-pro-preview','gemini-3-flash-preview','gemini-2.5-flash'];
+const ls={get:(k,d)=>{try{return localStorage.getItem(k)??d}catch{return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}};
+const S={key:ls.get('mq_key',''),model:ls.get('mq_model',''),img:null,sfx:true,demo:false,topic:'',title:'',levels:[],idx:0,hp:HP0,combo:0,max:0,score:0,hints:2,log:[],done:false,next:null};
+
+/* ---------- Demo quest (only used when the player picks it) ---------- */
+const DEMO=[
+['Phyllon the Chloroplast Sentry','🍃','Where do the light-dependent reactions of photosynthesis occur?',['Thylakoid membranes','Stroma','Mitochondrial cristae','Cell wall'],'Chlorophyll in the thylakoid membranes absorbs photons to start the light reactions.','Look for the stacked discs called grana.'],
+['Aquastor the Splitter','💧','Photolysis of water in Photosystem II releases which byproduct?',['Oxygen (O₂)','Carbon monoxide','Methane','Nitrogen dioxide'],'Splitting H₂O supplies electrons and releases O₂ as a byproduct.','Animals breathe it.'],
+['Protonius the Chemiosmotic','⚡','Which enzyme makes ATP as protons flow back across the thylakoid membrane?',['ATP synthase','Rubisco','DNA polymerase','Catalase'],'ATP synthase uses the proton gradient to phosphorylate ADP.','Its name ends in -synthase.'],
+['Rubiscora the Carbon Binder','🌀','What does RuBisCO do in the Calvin cycle?',['Fixes CO₂ onto RuBP','Splits water','Pumps sodium','Absorbs red light'],'RuBisCO attaches CO₂ to the 5-carbon sugar RuBP, starting carbon fixation.','It is the most abundant enzyme on Earth.'],
+['Solomon of Hexose','☀️','Which 3-carbon sugar does the Calvin cycle export to build glucose?',['G3P','Pyruvate','Oxaloacetate','Citrate'],'Two G3P molecules combine to form glucose.','Its abbreviation contains "3P".']
+].map((a,i)=>({campaignTitle:'Sample quest: Photosynthesis',bossName:a[0],bossEmoji:a[1],storyIntro:'Encounter '+(i+1)+': '+a[0]+' blocks your path.',question:a[2],options:a[3],correctIndex:0,explanation:a[4],hint:a[5]}));
+
+/* ---------- Helpers ---------- */
+function toast(m,ms=3200){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',ms)}
+function show(id){document.querySelectorAll('main>section').forEach(s=>s.classList.toggle('on',s.id===id))}
+function shuffleOpts(l){const o=l.options.map((t,i)=>({t:String(t),c:i===l.correctIndex}));for(let i=o.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[o[i],o[j]]=[o[j],o[i]]}return{...l,options:o.map(x=>x.t),correctIndex:o.findIndex(x=>x.c)}}
+function validLevel(l){return l&&typeof l.question==='string'&&Array.isArray(l.options)&&l.options.length===4&&Number.isInteger(l.correctIndex)&&l.correctIndex>=0&&l.correctIndex<4}
+
+/* ---------- Audio ---------- */
+let ac;
+function tone(f,type='sine',d=.15,g=.1,delay=0){if(!S.sfx)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const t=ac.currentTime+delay,o=ac.createOscillator(),v=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);v.gain.setValueAtTime(g,t);v.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(v);v.connect(ac.destination);o.start(t);o.stop(t+d)}catch{}}
+const sfx={ok:()=>[523,659,784,1046].forEach((f,i)=>tone(f,'triangle',.25,.12,i*.07)),hit:()=>{tone(140,'sawtooth',.3,.2);tone(70,'square',.3,.1,.05)},win:()=>[440,554,659,880].forEach(f=>tone(f,'sine',.9,.08)),ping:()=>tone(880,'sine',.2)};
+
+/* ---------- Particles ---------- */
+const cv=$('fx'),cx=cv.getContext('2d');let P=[];
+const rs=()=>{cv.width=innerWidth;cv.height=innerHeight};rs();addEventListener('resize',rs);
+function burst(x,y,c,n=30){for(let i=0;i<n;i++){const a=Math.random()*6.283,s=Math.random()*6+2;P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,a:1,d:Math.random()*.03+.015,c,r:Math.random()*3+2})}}
+(function loop(){cx.clearRect(0,0,cv.width,cv.height);P=P.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.08;p.a-=p.d;if(p.a<=0)return false;cx.globalAlpha=p.a;cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,p.r,0,6.283);cx.fill();return true});cx.globalAlpha=1;requestAnimationFrame(loop)})();
+
+/* ---------- Gemini client ---------- */
+async function gemini(prompt,schema,useImage=true){
+  if(!S.key)throw Object.assign(new Error('Add your Gemini API key to continue.'),{code:'KEY'});
+  const parts=[{text:prompt}];
+  if(useImage&&S.img)parts.unshift({inlineData:{mimeType:S.img.mime,data:S.img.data}});
+  const body={contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',responseSchema:schema,temperature:.8}};
+  const list=[...new Set([S.model,...MODELS].filter(Boolean))];let last;
+  for(const m of list){
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':S.key},body:JSON.stringify(body)});
+      if(!r.ok){const e=await r.json().catch(()=>({}));const msg=e.error?.message||('HTTP '+r.status);
+        if(r.status===404||/not found|not supported/i.test(msg)){last=new Error(msg);continue}
+        if(r.status===400&&/API key/i.test(msg))throw Object.assign(new Error('That API key was rejected. Check it in API settings.'),{code:'KEY'});
+        if(r.status===429)throw new Error('Rate limit reached. Wait a few seconds and try again.');
+        throw new Error(msg)}
+      const d=await r.json();const txt=d.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('');
+      if(!txt)throw new Error('Gemini returned an empty response (it may have been blocked). Try rephrasing the topic.');
+      $('mbadge').textContent=m.replace('gemini-','GEMINI ').replace(/-/g,' ').toUpperCase();
+      return JSON.parse(txt.replace(/^```json|```$/g,'').trim());
+    }catch(e){if(e.code==='KEY'||!/fetch|network/i.test(e.message))throw e;last=e}
+  }
+  throw last||new Error('No Gemini model was reachable.');
+}
+const LEVEL_SCHEMA={type:'OBJECT',properties:{campaignTitle:{type:'STRING'},bossName:{type:'STRING'},bossEmoji:{type:'STRING'},storyIntro:{type:'STRING'},question:{type:'STRING'},options:{type:'ARRAY',items:{type:'STRING'}},correctIndex:{type:'INTEGER'},explanation:{type:'STRING'},hint:{type:'STRING'}},required:['campaignTitle','bossName','bossEmoji','storyIntro','question','options','correctIndex','explanation','hint']};
+function difficulty(n){
+  const rec=S.log.slice(-3),wrong=rec.filter(x=>!x.c).length;
+  const base=['foundational','easy-intermediate','intermediate','advanced','expert synthesis'][n-1];
+  if(S.combo>=3)return 'hard: the player is on a streak, so raise it a notch above '+base;
+  if(wrong>=2)return 'gentler: the player is struggling, so go simpler than '+base+' and keep wording plain';
+  return base;
+}
+async function genLevel(n){
+  const src=S.topic?`the topic "${S.topic}"`:'the attached notes image';
+  const prev=S.levels.map(l=>l.question).join(' | ')||'none';
+  const p=`You are the Game Master of an educational RPG. Write encounter ${n} of ${N} about ${src}${S.topic&&S.img?' and the attached notes':''}.
+Difficulty: ${difficulty(n)}.
+Rules: exactly 4 options, exactly one correct, plausible distractors, correctIndex 0-3. Test understanding, not trivia. Do not repeat these questions: ${prev}.
+storyIntro is 1-2 dramatic sentences setting the scene, themed to the topic. bossName is a creative boss tied to the concept. bossEmoji is one emoji. explanation is 2 sentences. hint nudges without giving the answer. campaignTitle is a short epic quest title.
+Write everything in the same language as the topic or notes.`;
+  for(let a=0;a<2;a++){const l=await gemini(p,LEVEL_SCHEMA);if(validLevel(l))return shuffleOpts(l)}
+  throw new Error('Gemini returned a malformed question twice. Please try again.');
+}
+
+/* ---------- Game flow ---------- */
+function loading(msg,sub='',err=false){show('vLoad');$('lmsg').textContent=msg;$('lsub').textContent=sub;$('lerr').style.display=err?'flex':'none';document.querySelector('.spin').style.display=err?'none':'block'}
+function needKey(m){$('mmsg').textContent=m||'Your key stays in this browser\'s localStorage and is only sent to Google\'s Gemini API.';$('key').value=S.key;$('model').value=S.model;$('mKey').classList.add('on');$('key').focus()}
+
+async function start(){
+  S.topic=$('topic').value.trim();S.demo=$('demo').checked;
+  if(!S.demo&&!S.topic&&!S.img){toast('Type a topic or upload notes first.');$('topic').focus();return}
+  if(!S.demo&&!S.key){needKey('Add a free Gemini API key to generate a quest for your topic.');return}
+  Object.assign(S,{levels:[],idx:0,hp:HP0,combo:0,max:0,score:0,hints:2,log:[],done:false,next:null,title:''});
+  if(S.demo){S.levels=DEMO.map(shuffleOpts);S.title=DEMO[0].campaignTitle;play();return}
+  await loadFirst();
+}
+async function loadFirst(){
+  loading('Summoning the Game Master…',S.topic?`Building a quest about "${S.topic}"`:'Reading your notes');
+  try{const l=await genLevel(1);S.levels=[l];S.title=l.campaignTitle;play()}
+  catch(e){fail(e,loadFirst)}
+}
+function fail(e,retry){
+  console.error(e);
+  if(e.code==='KEY'){show('vSetup');needKey(e.message);return}
+  loading('That did not work',e.message,true);$('bRetry').onclick=retry;
+}
+function play(){show('vGame');render()}
+function render(){
+  const l=S.levels[S.idx];S.done=false;
+  $('lvl').textContent=S.idx+1;$('bName').textContent=l.bossName;$('bName2').textContent=l.bossName;
+  $('bEmoji').textContent=l.bossEmoji||'👾';$('gmT').textContent=l.storyIntro;$('qT').textContent=l.question;
+  $('diff').textContent=S.demo?'Sample quest':'Difficulty: '+difficulty(S.idx+1).split(':')[0];
+  $('hl').textContent=S.hints;$('bNext').style.display='none';$('exp').style.display='none';$('hintbox').style.display='none';$('bHint').disabled=S.hints<=0;
+  const box=$('opts');box.innerHTML='';
+  l.options.forEach((t,i)=>{const b=document.createElement('button');b.className='opt';b.type='button';const k=document.createElement('i');k.textContent=i+1;const s=document.createElement('span');s.textContent=t;b.append(k,s);b.onclick=()=>answer(i);box.appendChild(b)});
+  hud(false);$('bossB').style.width='100%';$('bT').textContent='Alive';$('bossP').setAttribute('aria-valuenow',100);
+}
+function hud(){$('hpT').textContent=`HP ${S.hp}/${HP0}`;$('hpB').style.width=S.hp+'%';$('hpP').setAttribute('aria-valuenow',S.hp);$('cmb').textContent=S.combo+'x'}
+function answer(i){
+  if(S.done)return;S.done=true;
+  const l=S.levels[S.idx],bs=[...document.querySelectorAll('.opt')],ok=i===l.correctIndex;
+  S.log.push({n:S.idx+1,q:l.question,c:ok});
+  if(ok){sfx.ok();S.combo++;S.max=Math.max(S.max,S.combo);S.score+=100*S.combo;bs[i].classList.add('ok');
+    $('gmT').textContent=`Critical hit! ${l.bossName} staggers.`;$('bossB').style.width='0%';$('bT').textContent='Defeated';$('bossP').setAttribute('aria-valuenow',0);
+    const r=bs[i].getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,'#10b981',36);
+  }else{sfx.hit();S.combo=0;S.hp=Math.max(0,S.hp-DMG);bs[i].classList.add('no');bs[l.correctIndex].classList.add('ok');
+    const a=$('arena');a.classList.add('shake');setTimeout(()=>a.classList.remove('shake'),450);
+    $('gmT').textContent=`${l.bossName} strikes back. You lose ${DMG} HP.`;burst(innerWidth/2,220,'#ff3366',40);}
+  bs.forEach(b=>b.disabled=true);hud();$('bHint').disabled=true;
+  $('expH').textContent=ok?'Correct: +'+(100*S.combo)+' XP':'Not quite: here is the answer';$('expB').textContent=l.explanation;$('exp').style.display='block';
+  const nb=$('bNext'),last=S.hp<=0||S.idx>=N-1;
+  nb.textContent=S.hp<=0?'See my report':last?'Claim victory':'Next encounter';nb.style.display='inline-flex';nb.focus();
+  if(!last&&!S.demo)S.next=genLevel(S.idx+2).then(v=>({v}),e=>({e})); // prefetch while the player reads
+}
+async function next(){
+  if(S.hp<=0||S.idx>=N-1){finish();return}
+  if(S.demo){S.idx++;render();return}
+  loading('The Game Master is adapting…','Tuning the next boss to your performance');
+  const r=await (S.next||genLevel(S.idx+2).then(v=>({v}),e=>({e})));
+  if(r.e){fail(r.e,()=>{S.next=null;next()});return}
+  S.levels.push(r.v);S.idx++;S.next=null;play();
+}
+function hint(){if(S.hints<=0||S.done)return;S.hints--;sfx.ping();$('hl').textContent=S.hints;const h=$('hintbox');h.textContent='💡 '+S.levels[S.idx].hint;h.style.display='block';$('bHint').disabled=S.hints<=0}
+async function explain(style){
+  const l=S.levels[S.idx],el=$('expB');el.textContent='Thinking…';
+  if(S.demo||!S.key){el.textContent=l.explanation;return}
+  try{const d=await gemini(`Explain this idea ${style}, in 2-3 sentences.\nQuestion: ${l.question}\nCorrect answer: ${l.options[l.correctIndex]}\nBase explanation: ${l.explanation}\nUse the same language as the question.`,{type:'OBJECT',properties:{text:{type:'STRING'}},required:['text']},false);el.textContent=d.text||l.explanation}
+  catch(e){el.textContent=l.explanation;toast('Could not reach Gemini: '+e.message)}
+}
+
+/* ---------- Report ---------- */
+function stepEl(t,h){const d=document.createElement('div');d.className='step';if(h){const b=document.createElement('b');b.textContent=h;d.append(b,document.createElement('br'))}d.append(document.createTextNode(t));return d}
+async function finish(){
+  const win=S.hp>0,right=S.log.filter(x=>x.c).length,acc=Math.round(right/Math.max(1,S.log.length)*100);
+  show('vRep');win?sfx.win():sfx.hit();
+  $('rH').textContent=win?'Quest complete':'Quest failed';$('rH').className=win?'ok-t':'no-t';
+  $('rS').textContent=win?`You cleared "${S.title}" with ${S.hp} HP left.`:`"${S.title}" beat you this time. Your study plan is below.`;
+  $('rSc').textContent=S.score;$('rAc').textContent=acc+'%';$('rMx').textContent=S.max+'x';
+  saveScore(S.title,win?'Victory':'Defeat',S.score);
+  const pl=$('plan');pl.replaceChildren(stepEl('Gemini is analysing your run…'));
+  const fallback=()=>{pl.replaceChildren(stepEl('Re-read the explanation for each question you missed, then explain it aloud without notes.','Review'),stepEl('Write three of your own quiz questions on this topic and answer them tomorrow.','Practise'),stepEl('Replay with the same topic: the AI Game Master writes new questions every time.','Retest'))};
+  if(S.demo||!S.key){fallback();return}
+  try{
+    const d=await gemini(`A student played a ${N}-level quiz quest on "${S.title}". Accuracy ${acc}%, best streak ${S.max}. Results: ${JSON.stringify(S.log)}. Write a short skill report. Same language as the questions.`,{type:'OBJECT',properties:{strengths:{type:'STRING'},weaknesses:{type:'STRING'},steps:{type:'ARRAY',items:{type:'STRING'}}},required:['strengths','weaknesses','steps']},false);
+    pl.replaceChildren(stepEl(d.strengths,'Strengths'),stepEl(d.weaknesses,'Weak spots'),...(d.steps||[]).slice(0,3).map((s,i)=>stepEl(s,'Step '+(i+1))));
+  }catch{fallback()}
+}
+function saveScore(t,r,s){let a=[];try{a=JSON.parse(ls.get('mq_lb','[]'))}catch{}a.unshift({t:String(t).slice(0,40),r,s,d:new Date().toLocaleDateString()});ls.set('mq_lb',JSON.stringify(a.slice(0,8)));lb()}
+function lb(){let a=[];try{a=JSON.parse(ls.get('mq_lb','[]'))}catch{}const tb=$('lb');tb.replaceChildren();
+  if(!a.length){const tr=tb.insertRow(),td=tr.insertCell();td.colSpan=4;td.textContent='No quests yet. Finish one to get on the board.';return}
+  a.forEach(x=>{const tr=tb.insertRow();[x.t,x.r,x.s,x.d].forEach((v,i)=>{const td=tr.insertCell();td.textContent=v;if(i===1)td.className=v==='Victory'?'ok-t':'no-t'})})}
+
+/* ---------- Image upload (resized before sending) ---------- */
+function loadImg(f){
+  if(!f||!f.type.startsWith('image/')){toast('Please choose an image file.');return}
+  const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
+    const sc=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    const u=c.toDataURL('image/jpeg',.85);S.img={mime:'image/jpeg',data:u.split(',')[1]};$('prev').src=u;$('prev').style.display='block'};im.src=r.result};r.readAsDataURL(f)}
+
+/* ---------- Wiring ---------- */
+$('form').onsubmit=e=>{e.preventDefault();start()};
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{$('topic').value=c.dataset.t;$('topic').focus()});
+const dz=$('drop'),fi=$('file');
+dz.onclick=()=>fi.click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('dv')};dz.ondragleave=()=>dz.classList.remove('dv');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('dv');loadImg(e.dataTransfer.files[0])};
+fi.onchange=()=>loadImg(fi.files[0]);
+$('bHint').onclick=hint;$('bNext').onclick=next;$('bBack').onclick=()=>show('vSetup');
+$('bAgain').onclick=()=>show('vSetup');
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>explain(b.dataset.s));
+$('bSfx').onclick=e=>{S.sfx=!S.sfx;e.target.textContent='Sound: '+(S.sfx?'on':'off');e.target.setAttribute('aria-pressed',S.sfx)};
+$('bContrast').onclick=e=>{const on=document.documentElement.dataset.contrast!=='high';document.documentElement.dataset.contrast=on?'high':'';e.target.setAttribute('aria-pressed',on)};
+$('bKey').onclick=()=>needKey();
+$('kCancel').onclick=()=>$('mKey').classList.remove('on');
+$('kSave').onclick=()=>{S.key=$('key').value.trim();S.model=$('model').value.trim();ls.set('mq_key',S.key);ls.set('mq_model',S.model);$('mKey').classList.remove('on');toast(S.key?'Saved. Hit Generate my quest.':'Key cleared.')};
+addEventListener('keydown',e=>{
+  if(e.key==='Escape')$('mKey').classList.remove('on');
+  if(!$('vGame').classList.contains('on')||$('mKey').classList.contains('on')||/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
+  if(!S.done&&'1234'.includes(e.key)&&e.key)answer(+e.key-1);
+  else if(S.done&&e.key==='Enter'&&document.activeElement!==$('bNext'))next();
+});
+lb();
+})();
+</script>
+</body>
+</html>
